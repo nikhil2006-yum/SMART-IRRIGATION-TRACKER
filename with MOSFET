@@ -1,0 +1,42 @@
+from machine import Pin, ADC
+import time
+import dht
+
+# ---- Pin Setup ----
+dht_pin = Pin(15)
+soil_sensor = ADC(26)   # GP26 (ADC0)
+relay = Pin(16, Pin.OUT)
+
+# ---- DHT Setup ----
+sensor = dht.DHT11(dht_pin)
+
+# ---- Threshold ----
+DRY_THRESHOLD = 30000   # Adjust after testing
+
+while True:
+    try:
+        # Read DHT11
+        sensor.measure()
+        temp = sensor.temperature()
+        humidity = sensor.humidity()
+
+        # Read Soil Moisture
+        soil_value = soil_sensor.read_u16()
+
+        print("Temp:", temp, "°C")
+        print("Humidity:", humidity, "%")
+        print("Soil Moisture:", soil_value)
+
+        # ---- Logic ----
+        if soil_value > DRY_THRESHOLD:
+            print("Soil Dry → Pump ON")
+            relay.value(1)
+        else:
+            print("Soil Wet → Pump OFF")
+            relay.value(0)
+
+        print("------------------------")
+        time.sleep(2)
+
+    except Exception as e:
+        print("Error:", e)
